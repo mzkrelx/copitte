@@ -7,7 +7,7 @@ import scala.xml.XML
 import jp.relx.copitte.test.TestConfigs
 import jp.relx.copitte.test.ResourceHandleFixture
 
-class RepositoryResourceSuite extends FunSuite with ResourceHandleFixture {
+class HelloResourceSuite extends FunSuite with ResourceHandleFixture {
 
   test("hello test") { handler =>
     val res = handler(new URI("/")).get()
@@ -18,4 +18,5 @@ class RepositoryResourceSuite extends FunSuite with ResourceHandleFixture {
       body \ "body" text
     }
   }
+  
 }
