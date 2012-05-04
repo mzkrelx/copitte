@@ -5,17 +5,9 @@ import org.apache.wink.client.Resource
 import java.net.URI
 import scala.xml.XML
 import jp.relx.copitte.test.TestConfigs
+import jp.relx.copitte.test.ResourceHandleFixture
 
-class RepositoryResourceSuite extends FunSuite {
-
-  type FixtureParam = (URI) => Resource
-
-  override def withFixture(test: OneArgTest) {
-    test { (path: URI) =>
-      new RestClient().resource(
-        TestConfigs.AppContextUri.resolve(path))
-    }
-  }
+class RepositoryResourceSuite extends FunSuite with ResourceHandleFixture {
 
   test("hello test") { handler =>
     val res = handler(new URI("/")).get()
