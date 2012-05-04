@@ -4,6 +4,7 @@ import org.apache.wink.client.RestClient
 import org.apache.wink.client.Resource
 import java.net.URI
 import scala.xml.XML
+import jp.relx.copitte.test.TestConfigs
 
 class RepositoryResourceSuite extends FunSuite {
 

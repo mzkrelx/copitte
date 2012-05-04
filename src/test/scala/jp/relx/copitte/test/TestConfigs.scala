@@ -1,4 +1,4 @@
-package jp.relx.copitte
+package jp.relx.copitte.test
 import java.net.URI
 
 object TestConfigs {
