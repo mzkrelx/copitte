@@ -12,6 +12,6 @@ libraryDependencies ++= Seq(
   "org.apache.wink" % "wink-server" % "1.1.2-incubating",
   "org.apache.wink" % "wink" % "1.1.2-incubating",
   "org.apache.wink" % "wink-client" % "1.1.2-incubating",
-  "org.scalatest" %% "scalatest" % "1.7.2" % "test"
+  "org.scalatest" %% "scalatest" % "1.7.2" % "test",
+  "net.debasishg" %% "sjson" % "0.17"
 )
-
