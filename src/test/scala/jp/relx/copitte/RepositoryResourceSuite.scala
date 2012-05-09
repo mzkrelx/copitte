@@ -11,14 +11,14 @@ import jp.relx.copitte.test.ResourceHandleFixture
 
 class RepositoryResourceSuite extends FunSuite with ResourceHandleFixture {
 
-  test("repository list test") { handler => pending
+  test("list repositories") { handler => pending
     val res = handler(new URI("/repos")).get()
     expect(200) { res.getStatusCode() }
 
     // TODO body check
   }
 
-  test("repository create test") { handler => pending
+  test("create repository") { handler => pending
     val res = handler(new URI("/repos")).post("") // TODO post body
     expect(201) { res.getStatusCode() }
 
@@ -37,4 +37,10 @@ class RepositoryResourceSuite extends FunSuite with ResourceHandleFixture {
     }
   }
   
+  // TODO
+  test("remove repository") { pending }
+
+  // TODO
+  test("sync repositories (pull and push)") { pending }
+
 }
