@@ -1,4 +1,4 @@
-package jp.relx.common
+package jp.relx.commons
 import scala.io.Source
 import java.io.InputStream
 
