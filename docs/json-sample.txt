@@ -1,0 +1,10 @@
+#
+# pullurl をクローンし、pushurl をリモートリポジトリに登録する
+#
+POST /repos
+{
+  "vcs": "git",
+  "name": "repo",
+  "pullurl": "file:///home/charles/gitwork/1/repo.git",
+  "pushurl": "file:///home/charles/gitwork/2/repo.git"
+}
