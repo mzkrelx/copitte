@@ -1,12 +1,11 @@
 package jp.relx.commons
 import java.io.InputStream
 import java.util.concurrent.TimeoutException
-
 import scala.actors.Futures.awaitAll
 import scala.actors.Futures.future
 import scala.io.Source
-
 import jp.relx.commons.IoUtil.using
+import java.io.File
 
 /**
  * 外部コマンド実行関連ユーリティリティ
@@ -18,11 +17,12 @@ object CommandExecuteUtil {
    *
    * @param cmd 外部コマンド文字列
    * @param timeout 外部コマンドの終了待ち時間
+   * @param dir 作業ディレクトリ
    * @return (終了コード, 標準出力, 標準エラー出力)
    * @throws TimeoutException
    */
-  def execCommand(cmd: String, timeout: Long = 0L): (Int, String, String) = {
-    val process = Runtime.getRuntime().exec(cmd)
+  def execCommand(cmd: String, timeout: Long = 0L, dir: File = null): (Int, String, String) = {
+    val process = Runtime.getRuntime().exec(cmd, null, dir)
     try {
       process.getOutputStream().close()
       val stdout = future { using(process.getInputStream()) { toString } }
