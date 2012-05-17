@@ -10,53 +10,43 @@ import sjson.json.DefaultProtocol
 import sjson.json.Format
 import scala.reflect.BeanInfo
 import javax.ws.rs.PathParam
-import jp.relx.commons.CommandExecuteUtil
+import jp.relx.commons.CommandExecuteUtil.execCommand
 import org.slf4j.LoggerFactory
 import jp.relx.commons.CommandFailedException
 import java.io.File
   
 @BeanInfo
 case class RepoInfo(vcs: String, name: String, pullurl: String, pushurl: String) {
-  def this() = {
-    this("", "", "", "")
-  }
+  def this() = this("", "", "", "")
 }
 
 @BeanInfo
 case class Author(name: String, email: String) {
-  def this() = {
-    this("", "")
-  }
+  def this() = this("", "")
 }
+
 @BeanInfo
 case class Commit(id: String, message: String, timestamp: String, url: String,
   added: String, removed: String, modified: String, author: Author) {
-  def this() = {
-    this("", "", "", "", "", "", "", Author("", ""))
-  }
+  def this() = this("", "", "", "", "", "", "", Author("", ""))
 }
+
 @BeanInfo
 case class Owner(name: String, email: String) {
-  def this() = {
-    this("", "")
-  }
+  def this() = this("", "")
 }
+
 @BeanInfo
 case class Repository(name: String, url: String, pledgie: String,
   description: String, homepage: String, watchers: Int, forks: Int,
   rprivate: Int, owner: Owner) {
-  def this() = {
-    this("", "", "", "", "", 0, 0, 0, Owner("", ""))
-  }
+  def this() = this("", "", "", "", "", 0, 0, 0, Owner("", ""))
 }
 
 @BeanInfo
 case class PostReceiveInfo(before: String, after: String, ref: String,
   commits: List[Commit], repository: Repository) {
-  def this() = {
-    this("", "", "", List[Commit](), 
-      Repository("", "", "", "", "", 0, 0, 0, Owner("", "")))
-  }
+  def this() = this("", "", "", List[Commit](), Repository("", "", "", "", "", 0, 0, 0, Owner("", "")))
 }
 
 @Path("/repos")
@@ -71,9 +61,7 @@ class RepositoryResource {
   
   val logger = LoggerFactory.getLogger(getClass) 
   
-  def getLocalRepoPath(repoName: String): String = {
-    OutPath + "/" + repoName
-  }
+  def getLocalRepoPath(repoName: String): String = OutPath + "/" + repoName
   
   @POST
   def registerRepo(bodyStr: String): Response = {
@@ -101,7 +89,7 @@ class RepositoryResource {
        * @return  (終了コード, 標準出力, 標準エラー出力)
        */
       def gitClone(): (Int, String, String) = 
-        CommandExecuteUtil.execCommand("git clone " + repoInfo.pullurl + " " + localRepoPath)
+        execCommand("git clone " + repoInfo.pullurl + " " + localRepoPath)
 
       gitClone() match {
         case (0, o, _) => logger.debug(o)
@@ -118,7 +106,7 @@ class RepositoryResource {
        * git remote add [name] [pushurl] と同義
        */
       def addRemoteConfig(): (Int, String, String) = 
-        CommandExecuteUtil.execCommand(
+        execCommand(
           "git remote add " + repoInfo.name + " " + repoInfo.pushurl, 30 * 1000L,
           new File(localRepoPath)
         )
@@ -129,34 +117,35 @@ class RepositoryResource {
         </html>
       Response.ok(res.toString()).build()
     } catch {
-      case e: IllegalArgumentException => Response.status(400).build()
+      case e: IllegalArgumentException => {
+        logger.error(e.getMessage())
+        Response.status(400).build()
+      }
+      case e: CommandFailedException => {
+        logger.error(e.getMessage())
+        Response.status(500).build()
+      }
     }
   }
   
   @POST
   @Path("{repoName}")
   def postReceive(@PathParam("repoName")repoName: String, bodyStr: String): Response = {
-    def getPostReceiveInfo() = {
+    def getPostReceiveInfo = {
       val postReceiveInfo = SJSON.in[PostReceiveInfo](JsValue.fromString(bodyStr))
       require(postReceiveInfo.repository.name != "")
       postReceiveInfo
     }
     
     try {
-      val postReceiveInfo = getPostReceiveInfo()
-      val localRepoPath = getLocalRepoPath(postReceiveInfo.repository.name)
+      val execGitCmd = execCommand(_: String, 30 * 1000L, 
+        new File(getLocalRepoPath(getPostReceiveInfo.repository.name)))
       
-      CommandExecuteUtil.execCommand(
-        "git pull origin master", 30 * 1000L,
-        new File(localRepoPath)
-      ) match {
+      execGitCmd("git pull origin master") match {
         case (0, o, _) => logger.debug(o)
         case (_, _, e) => throw new CommandFailedException(e)
       }
-      CommandExecuteUtil.execCommand(
-        "git push " + PushRepoName + " master", 30 * 1000L,
-        new File(localRepoPath)
-      ) match {
+      execGitCmd("git push " + PushRepoName + " master") match {
         case (0, o, _) => logger.debug(o)
         case (_, _, e) => throw new CommandFailedException(e)
       }  
