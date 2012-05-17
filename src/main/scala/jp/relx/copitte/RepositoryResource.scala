@@ -22,13 +22,42 @@ case class RepoInfo(vcs: String, name: String, pullurl: String, pushurl: String)
   }
 }
 
-case class Author(name: String, email: String)
-case class Commits(id: String, message: String, timestamp: String, url: String, added: String, removed: String, modified: String, author: Author)
-case class Owner(name: String, email: String)
-case class Repository(name: String, url: String, pledgie: String, description: String, homepage: String, watchers: String, forks: String, rprivate: String, owner: Owner)
+@BeanInfo
+case class Author(name: String, email: String) {
+  def this() = {
+    this("", "")
+  }
+}
+@BeanInfo
+case class Commit(id: String, message: String, timestamp: String, url: String,
+  added: String, removed: String, modified: String, author: Author) {
+  def this() = {
+    this("", "", "", "", "", "", "", Author("", ""))
+  }
+}
+@BeanInfo
+case class Owner(name: String, email: String) {
+  def this() = {
+    this("", "")
+  }
+}
+@BeanInfo
+case class Repository(name: String, url: String, pledgie: String,
+  description: String, homepage: String, watchers: Int, forks: Int,
+  rprivate: Int, owner: Owner) {
+  def this() = {
+    this("", "", "", "", "", 0, 0, 0, Owner("", ""))
+  }
+}
 
 @BeanInfo
-case class PostReceiveInfo(before: String, after: String, ref: String, commits: Commits, repository: Repository)
+case class PostReceiveInfo(before: String, after: String, ref: String,
+  commits: List[Commit], repository: Repository) {
+  def this() = {
+    this("", "", "", List[Commit](), 
+      Repository("", "", "", "", "", 0, 0, 0, Owner("", "")))
+  }
+}
 
 @Path("/repos")
 class RepositoryResource {
@@ -41,15 +70,9 @@ class RepositoryResource {
 
   
   val logger = LoggerFactory.getLogger(getClass) 
-    
-  /**
-   * git pull&push を実行するためのスクリプトファイルのパスを取得します。
-   * 
-   * @param repoName pull元リポジトリ名
-   * @return ファイルパス
-   */
-  def getFilePath(repoName: String): String = {
-    OutPath + "/pullpush-" + repoName + ".sh"
+  
+  def getLocalRepoPath(repoName: String): String = {
+    OutPath + "/" + repoName
   }
   
   @POST
@@ -68,7 +91,7 @@ class RepositoryResource {
       val repoInfo = getRepoInfo()
       
       // TODO OutPath ディレクトリが空であるかチェックする
-      val localRepoPath = OutPath + "/" + repoInfo.name
+      val localRepoPath = getLocalRepoPath(repoInfo.name)
       
       /**
        * git clone します。
@@ -96,7 +119,8 @@ class RepositoryResource {
        */
       def addRemoteConfig(): (Int, String, String) = 
         CommandExecuteUtil.execCommand(
-          "git remote add " + repoInfo.name + " " + repoInfo.pushurl, 30 * 1000L, new File(localRepoPath)
+          "git remote add " + repoInfo.name + " " + repoInfo.pushurl, 30 * 1000L,
+          new File(localRepoPath)
         )
       
       val res =
@@ -109,5 +133,48 @@ class RepositoryResource {
     }
   }
   
+  @POST
+  @Path("{repoName}")
+  def postReceive(@PathParam("repoName")repoName: String, bodyStr: String): Response = {
+    def getPostReceiveInfo() = {
+      val postReceiveInfo = SJSON.in[PostReceiveInfo](JsValue.fromString(bodyStr))
+      require(postReceiveInfo.repository.name != "")
+      postReceiveInfo
+    }
+    
+    try {
+      val postReceiveInfo = getPostReceiveInfo()
+      val localRepoPath = getLocalRepoPath(postReceiveInfo.repository.name)
+      
+      CommandExecuteUtil.execCommand(
+        "git pull origin master", 30 * 1000L,
+        new File(localRepoPath)
+      ) match {
+        case (0, o, _) => logger.debug(o)
+        case (_, _, e) => throw new CommandFailedException(e)
+      }
+      CommandExecuteUtil.execCommand(
+        "git push " + PushRepoName + " master", 30 * 1000L,
+        new File(localRepoPath)
+      ) match {
+        case (0, o, _) => logger.debug(o)
+        case (_, _, e) => throw new CommandFailedException(e)
+      }  
+      val res = 
+        <html xmlns="http://www.w3.org/1999/xhtml">
+          <body>Thank you. Repositories ware merged.</body>
+        </html>
+      Response.ok(res.toString()).build()
+    } catch {
+      case e: IllegalArgumentException => {
+        logger.error(e.getMessage())
+        Response.status(400).build()
+      }
+      case e: CommandFailedException => {
+        logger.error(e.getMessage())
+        Response.status(500).build()
+      }
+    }
+  }
 
 }
