@@ -36,11 +36,12 @@ class RepositoryResourceSuite extends FunSuite with ResourceHandleFixture {
       }
     }
   }
-  
-  // TODO
-  test("remove repository") { pending }
 
   // TODO
   test("sync repositories (pull and push)") { pending }
 
+  test("remove repository") { handler => pending
+    val res = handler(new URI("/repos/milm")).delete()
+    expect(200) { res.getStatusCode() }
+  }
 }
