@@ -14,6 +14,7 @@ import jp.relx.commons.CommandExecuteUtil.execCommand
 import org.slf4j.LoggerFactory
 import jp.relx.commons.CommandFailedException
 import java.io.File
+import javax.ws.rs.DELETE
   
 @BeanInfo
 case class RepoInfo(vcs: String, name: String, pullurl: String, pushurl: String) {
@@ -148,7 +149,7 @@ class RepositoryResource {
       execGitCmd("git push " + PushRepoName + " master") match {
         case (0, o, _) => logger.debug(o)
         case (_, _, e) => throw new CommandFailedException(e)
-      }  
+      }
       val res = 
         <html xmlns="http://www.w3.org/1999/xhtml">
           <body>Thank you. Repositories ware merged.</body>
@@ -166,4 +167,19 @@ class RepositoryResource {
     }
   }
 
+  @DELETE
+  @Path("{repoName}")
+  def deleteRepo(@PathParam("repoName")repoName: String): Response = {
+    val cmd = "rm -rf " + getLocalRepoPath(repoName);
+    execCommand(cmd, 3 * 1000L) match {
+      case (0, o, _) => logger.info("Executed: [" + cmd + "]")
+      case (_, _, e) => throw new CommandFailedException(e)
+    }
+    val res = 
+      <html xmlns="http://www.w3.org/1999/xhtml">
+        <body>Repository [{repoName}] was deleted.</body>
+      </html>
+    Response.ok().build()
+  }
+  
 }
