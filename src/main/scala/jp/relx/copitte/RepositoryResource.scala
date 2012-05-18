@@ -1,53 +1,28 @@
 package jp.relx.copitte
 
-import dispatch.json.JsValue
+import java.io.File
+import scala.reflect.BeanInfo
+import org.slf4j.LoggerFactory
+import javax.ws.rs.core.Response
+import javax.ws.rs.DELETE
 import javax.ws.rs.POST
 import javax.ws.rs.Path
-import sjson.json.Serializer.SJSON
-import sjson.json.Serializer
-import javax.ws.rs.core.Response
-import sjson.json.DefaultProtocol
-import sjson.json.Format
-import scala.reflect.BeanInfo
 import javax.ws.rs.PathParam
 import jp.relx.commons.CommandExecuteUtil.execCommand
-import org.slf4j.LoggerFactory
 import jp.relx.commons.CommandFailedException
-import java.io.File
+import net.liftweb.json.DefaultFormats
+import net.liftweb.json.parse
   
-@BeanInfo
-case class RepoInfo(vcs: String, name: String, pullurl: String, pushurl: String) {
-  def this() = this("", "", "", "")
-}
-
-@BeanInfo
-case class Author(name: String, email: String) {
-  def this() = this("", "")
-}
-
-@BeanInfo
+case class RepoInfo(vcs: String, name: String, pullurl: String, pushurl: String)
+case class Author(name: String, email: String)
 case class Commit(id: String, message: String, timestamp: String, url: String,
-  added: String, removed: String, modified: String, author: Author) {
-  def this() = this("", "", "", "", "", "", "", Author("", ""))
-}
-
-@BeanInfo
-case class Owner(name: String, email: String) {
-  def this() = this("", "")
-}
-
-@BeanInfo
+  added: String, removed: String, modified: String, author: Author)
+case class Owner(name: String, email: String)
 case class Repository(name: String, url: String, pledgie: String,
   description: String, homepage: String, watchers: Int, forks: Int,
-  rprivate: Int, owner: Owner) {
-  def this() = this("", "", "", "", "", 0, 0, 0, Owner("", ""))
-}
-
-@BeanInfo
+  rprivate: Int, owner: Owner)
 case class PostReceiveInfo(before: String, after: String, ref: String,
-  commits: List[Commit], repository: Repository) {
-  def this() = this("", "", "", List[Commit](), Repository("", "", "", "", "", 0, 0, 0, Owner("", "")))
-}
+  commits: List[Commit], repository: Repository)
 
 @Path("/repos")
 class RepositoryResource {
@@ -61,25 +36,31 @@ class RepositoryResource {
   
   val logger = LoggerFactory.getLogger(getClass) 
   
+  /**
+   * jsonのパースのフォーマット指定。暗黙的パラメータに使用される。
+   */
+  implicit val formats = DefaultFormats
+  
   def getLocalRepoPath(repoName: String): String = OutPath + "/" + repoName
   
   @POST
   def registerRepo(bodyStr: String): Response = {
-    
-    def getRepoInfo(): RepoInfo = {
-      val repoInfo = SJSON.in[RepoInfo](JsValue.fromString(bodyStr))
-      require(repoInfo.vcs != "")
-      require(repoInfo.name != "")
-      require(repoInfo.pullurl != "")
-      require(repoInfo.pushurl != "")
-      repoInfo
-    }
-
     try {
-      val repoInfo = getRepoInfo()
+      logger.info(bodyStr)
+      val repoInfo = parse(bodyStr).extract[RepoInfo]
       
       // TODO OutPath ディレクトリが空であるかチェックする
       val localRepoPath = getLocalRepoPath(repoInfo.name)
+      
+      gitClone() match {
+        case (0, o, _) => logger.debug(o)
+        case (_, _, e) => throw new CommandFailedException(e)
+      }
+      
+      addRemoteConfig() match {
+        case (0, o, _) => logger.debug(o)
+        case (_, _, e) => throw new CommandFailedException(e)
+      }
       
       /**
        * git clone します。
@@ -91,16 +72,6 @@ class RepositoryResource {
       def gitClone(): (Int, String, String) = 
         execCommand("git clone " + repoInfo.pullurl + " " + localRepoPath)
 
-      gitClone() match {
-        case (0, o, _) => logger.debug(o)
-        case (_, _, e) => throw new CommandFailedException(e)
-      }
-      
-      addRemoteConfig() match {
-        case (0, o, _) => logger.debug(o)
-        case (_, _, e) => throw new CommandFailedException(e)
-      }
-      
       /**
        * クローンしたリポジトリの設定に push 先リポジトリの情報を追加
        * git remote add [name] [pushurl] と同義
@@ -132,7 +103,7 @@ class RepositoryResource {
   @Path("{repoName}")
   def postReceive(@PathParam("repoName")repoName: String, bodyStr: String): Response = {
     def getPostReceiveInfo = {
-      val postReceiveInfo = SJSON.in[PostReceiveInfo](JsValue.fromString(bodyStr))
+      val postReceiveInfo = parse(bodyStr).extract[PostReceiveInfo]
       require(postReceiveInfo.repository.name != "")
       postReceiveInfo
     }
@@ -148,7 +119,7 @@ class RepositoryResource {
       execGitCmd("git push " + PushRepoName + " master") match {
         case (0, o, _) => logger.debug(o)
         case (_, _, e) => throw new CommandFailedException(e)
-      }  
+      }
       val res = 
         <html xmlns="http://www.w3.org/1999/xhtml">
           <body>Thank you. Repositories ware merged.</body>
@@ -166,4 +137,19 @@ class RepositoryResource {
     }
   }
 
+  @DELETE
+  @Path("{repoName}")
+  def deleteRepo(@PathParam("repoName")repoName: String): Response = {
+    val cmd = "rm -rf " + getLocalRepoPath(repoName);
+    execCommand(cmd, 3 * 1000L) match {
+      case (0, o, _) => logger.info("Executed: [" + cmd + "]")
+      case (_, _, e) => throw new CommandFailedException(e)
+    }
+    val res = 
+      <html xmlns="http://www.w3.org/1999/xhtml">
+        <body>Repository [{repoName}] was deleted.</body>
+      </html>
+    Response.ok().build()
+  }
+  
 }
