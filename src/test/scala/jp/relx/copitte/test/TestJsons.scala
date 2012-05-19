@@ -2,7 +2,7 @@ package jp.relx.copitte.test
 import java.net.URL
 
 object TestJsons {
-  def registerRepo(pushUrl: String, pullUrl: String): String = ("""{
+  def registerRepo(pullUrl: String, pushUrl: String): String = ("""{
     |    "vcs": "git",
     |    "name": "copitte",
     |    "pullurl": """" + pullUrl + """",
