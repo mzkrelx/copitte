@@ -28,6 +28,8 @@ class RepositoryResourceSuite extends FunSuite
 
   val WorkDir = new File(getTempDirectory(), "copitte_test")
   
+  val clonedRepo = new File(Const.CopitteHome, "repos/copitte")
+  
   implicit val formats = DefaultFormats
 
   override def beforeAll {
@@ -66,9 +68,8 @@ class RepositoryResourceSuite extends FunSuite
       }
     }
 
-    val repoDir = new File(Const.CopitteHome, "repos/copitte")
     val grepInRepo = (cmd: String, reg: Regex) => {
-      val lins = Process(cmd, repoDir).lines.toList
+      val lins = Process(cmd, clonedRepo).lines.toList
       logger.info(lins.toString())
       lins filter {
         case reg(_) => true
@@ -104,6 +105,6 @@ class RepositoryResourceSuite extends FunSuite
     val res = handler(new URI("/repos/copitte")).delete()
     expect(200) { res.getStatusCode() }
 
-    // TODO local filesystem check
+    assert(!clonedRepo.exists())
   }
 }
