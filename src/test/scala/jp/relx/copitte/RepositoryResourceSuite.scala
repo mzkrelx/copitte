@@ -3,10 +3,16 @@ package jp.relx.copitte
 import java.io.File
 import java.net.URI
 
-import scala.collection.JavaConversions._
-import scala.collection.JavaConverters._
+import scala.collection.JavaConversions.asScalaBuffer
+import scala.collection.JavaConverters.mapAsScalaMapConverter
+import scala.sys.process.Process
+import scala.util.matching.Regex
+import scala.xml.XML
 
-import org.apache.commons.io.FileUtils._
+import org.apache.commons.io.FileUtils.copyDirectoryToDirectory
+import org.apache.commons.io.FileUtils.deleteDirectory
+import org.apache.commons.io.FileUtils.forceMkdir
+import org.apache.commons.io.FileUtils.getTempDirectory
 import org.scalatest.fixture.FunSuite
 import org.scalatest.BeforeAndAfterAll
 import org.slf4j.LoggerFactory
@@ -14,7 +20,6 @@ import org.slf4j.LoggerFactory
 import jp.relx.copitte.test.ResourceHandleFixture
 import jp.relx.copitte.test.TestJsons
 import net.liftweb.json.DefaultFormats
-import scala.xml.XML
 
 class RepositoryResourceSuite extends FunSuite
   with ResourceHandleFixture with BeforeAndAfterAll {
@@ -45,6 +50,7 @@ class RepositoryResourceSuite extends FunSuite
 
     val res = handler(new URI("/repos")).post(
         TestJsons.registerRepo(srcRepo, destRepo))
+
     expect(201) { res.getStatusCode() }
 
     val loc = res.getHeaders().asScala.get("Location")
@@ -61,9 +67,28 @@ class RepositoryResourceSuite extends FunSuite
       }
     }
 
-    // TODO local filesystem check
+    val repoDir = new File(Const.CopitteHome, "repos/copitte")
+
+    val grepInRepo = (cmd: String, reg: Regex) => {
+      val lins = Process(cmd, repoDir).lines.toList
+      logger.info(lins.toString())
+      lins filter {
+        case reg(_) => true
+        case _ => false
+      } map { case reg(ptn) => ptn }
+    }
+
+    expect(srcRepo) {
+      grepInRepo("git remote show origin ", """^\s+Fetch URL: (.+)$""".r).
+        headOption.getOrElse("Fetch URL not found.")
+    }
+
+    expect(destRepo) {
+      grepInRepo("git remote show copitte ", """^\s+Push  URL: (.+)$""".r).
+        headOption.getOrElse("Push URL not found.")
+    }
   }
-  
+
   test("list repositories") { handler =>
     val res = handler(new URI("/repos")).get()
     expect(200) { res.getStatusCode() }
