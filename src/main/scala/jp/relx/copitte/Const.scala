@@ -11,4 +11,6 @@ object Const {
     )
   }
   
+  val ReposDirPath = CopitteHome + "/repos"
+  
 }

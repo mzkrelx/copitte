@@ -31,8 +31,6 @@ case class PostReceiveInfo(before: String, after: String, ref: String,
 @Path("/repos")
 class RepositoryResource {
 
-  val repoDir = Const.CopitteHome + "/repos"
-  
   // .git/config に書く remote の名前
   val PushRepoName = "copitte-push-repo"
 
@@ -43,11 +41,11 @@ class RepositoryResource {
    */
   implicit val formats = DefaultFormats
   
-  def getLocalRepoPath(repoName: String): String = repoDir + "/" +repoName
+  def getLocalRepoPath(repoName: String): String = Const.ReposDirPath + "/" +repoName
   
   @GET
   def listRepos(): Response = {
-    val cmd = "ls -1 " + repoDir
+    val cmd = "ls -1 " + Const.ReposDirPath
     execCommand(cmd, 3 * 1000L) match {
       case (0, o, _) => {
         val res = 
