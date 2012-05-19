@@ -1,15 +1,40 @@
 package jp.relx.copitte
+
+import java.io.File
 import java.net.URI
 
-import scala.collection.JavaConverters._
 import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
-import org.apache.wink.client.Resource
+import org.apache.commons.io.FileUtils
 import org.scalatest.fixture.FunSuite
+import org.scalatest.BeforeAndAfterAll
+import org.slf4j.LoggerFactory
 
 import jp.relx.copitte.test.ResourceHandleFixture
+import jp.relx.copitte.test.TestJsons
+import net.liftweb.json.DefaultFormats
 
-class RepositoryResourceSuite extends FunSuite with ResourceHandleFixture {
+class RepositoryResourceSuite extends FunSuite
+  with ResourceHandleFixture with BeforeAndAfterAll {
+  
+  val logger = LoggerFactory.getLogger(getClass)
+
+  val WorkDir = new File("target/test/work")
+
+  implicit val formats = DefaultFormats
+
+  override def beforeAll {
+    FileUtils.forceMkdir(WorkDir)
+    val resourceDir = new File("src/test/resources")
+    List("onecommit-src.git", "blank-dest.git") foreach { orig =>
+      FileUtils.copyDirectoryToDirectory(new File(resourceDir, orig), WorkDir)
+    }
+  }
+
+  override def afterAll {
+    FileUtils.deleteDirectory(WorkDir)
+  }
 
   test("list repositories") { handler => pending
     val res = handler(new URI("/repos")).get()
