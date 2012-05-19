@@ -31,13 +31,11 @@ case class PostReceiveInfo(before: String, after: String, ref: String,
 @Path("/repos")
 class RepositoryResource {
 
-  // TODO プロパティファイルに定義を移行する
-  val OutPath = "/home/charles/copitte"
-    
+  val repoDir = Const.CopitteHome + "/repos"
+  
   // .git/config に書く remote の名前
   val PushRepoName = "pushRepo"
 
-  
   val logger = LoggerFactory.getLogger(getClass) 
   
   /**
@@ -45,11 +43,11 @@ class RepositoryResource {
    */
   implicit val formats = DefaultFormats
   
-  def getLocalRepoPath(repoName: String): String = OutPath + "/" + repoName
+  def getLocalRepoPath(repoName: String): String = repoDir + "/" +repoName
   
   @GET
   def listRepos(): Response = {
-    val cmd = "ls -1 " + OutPath
+    val cmd = "ls -1 " + repoDir
     execCommand(cmd, 3 * 1000L) match {
       case (0, o, _) => {
         val res = 
