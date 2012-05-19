@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory
 import jp.relx.copitte.test.ResourceHandleFixture
 import jp.relx.copitte.test.TestJsons
 import net.liftweb.json.DefaultFormats
+import scala.xml.XML
 
 class RepositoryResourceSuite extends FunSuite
   with ResourceHandleFixture with BeforeAndAfterAll {
@@ -67,13 +68,16 @@ class RepositoryResourceSuite extends FunSuite
     val res = handler(new URI("/repos")).get()
     expect(200) { res.getStatusCode() }
 
-    // TODO body check
+    val body = XML.loadString(res.getEntity(classOf[String]))
+    expect("copitte") {
+      body \ "body" \ "ul" \ "li" text
+    }
   }
 
   // TODO
   test("sync repositories (pull and push)") { pending }
 
-  test("remove repository") { handler => pending
+  test("remove repository") { handler =>
     val res = handler(new URI("/repos/copitte")).delete()
     expect(200) { res.getStatusCode() }
 
