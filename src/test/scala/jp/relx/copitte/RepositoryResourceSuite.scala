@@ -44,7 +44,8 @@ class RepositoryResourceSuite extends FunSuite
   }
 
   test("create repository") { handler => pending
-    val res = handler(new URI("/repos")).post("") // TODO post body
+
+    val res = handler(new URI("/repos")).post(TestJsons.registerRepo)
     expect(201) { res.getStatusCode() }
 
     val loc = res.getHeaders().asScala.get("Location")
@@ -60,6 +61,8 @@ class RepositoryResourceSuite extends FunSuite
         case Some(x) => "too many location header"
       }
     }
+
+    // TODO local filesystem check
   }
 
   // TODO
@@ -68,5 +71,7 @@ class RepositoryResourceSuite extends FunSuite
   test("remove repository") { handler => pending
     val res = handler(new URI("/repos/copitte")).delete()
     expect(200) { res.getStatusCode() }
+
+    // TODO local filesystem check
   }
 }
