@@ -1,10 +1,14 @@
 package jp.relx.copitte
 
 import java.io.File
+
 import scala.reflect.BeanInfo
+
 import org.slf4j.LoggerFactory
+
 import javax.ws.rs.core.Response
 import javax.ws.rs.DELETE
+import javax.ws.rs.GET
 import javax.ws.rs.POST
 import javax.ws.rs.Path
 import javax.ws.rs.PathParam
@@ -12,7 +16,7 @@ import jp.relx.commons.CommandExecuteUtil.execCommand
 import jp.relx.commons.CommandFailedException
 import net.liftweb.json.DefaultFormats
 import net.liftweb.json.parse
-  
+
 case class RepoInfo(vcs: String, name: String, pullurl: String, pushurl: String)
 case class Author(name: String, email: String)
 case class Commit(id: String, message: String, timestamp: String, url: String,
@@ -27,13 +31,11 @@ case class PostReceiveInfo(before: String, after: String, ref: String,
 @Path("/repos")
 class RepositoryResource {
 
-  // TODO プロパティファイルに定義を移行する
-  val OutPath = "/home/charles/copitte"
-    
-  // .git/config に書く remote の名前
-  val PushRepoName = "pushRepo"
-
+  val repoDir = Const.CopitteHome + "/repos"
   
+  // .git/config に書く remote の名前
+  val PushRepoName = "copitte-push-repo"
+
   val logger = LoggerFactory.getLogger(getClass) 
   
   /**
@@ -41,7 +43,27 @@ class RepositoryResource {
    */
   implicit val formats = DefaultFormats
   
-  def getLocalRepoPath(repoName: String): String = OutPath + "/" + repoName
+  def getLocalRepoPath(repoName: String): String = repoDir + "/" +repoName
+  
+  @GET
+  def listRepos(): Response = {
+    val cmd = "ls -1 " + repoDir
+    execCommand(cmd, 3 * 1000L) match {
+      case (0, o, _) => {
+        val res = 
+          <html xmlns="http://www.w3.org/1999/xhtml">
+            <body>
+              <h1>Repository list</h1>
+              <ul>
+                {(o lines) map { str => <li>{str}</li>}}
+              </ul>
+            </body>
+          </html>
+        Response.ok(res.toString()).build()
+      }
+      case (_, _, e) => throw new CommandFailedException(e)
+    }
+  }
   
   @POST
   def registerRepo(bodyStr: String): Response = {
