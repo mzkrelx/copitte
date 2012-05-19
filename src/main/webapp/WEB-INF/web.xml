@@ -8,6 +8,10 @@
 
   <display-name>Copitte</display-name>
 
+  <listener>
+    <listener-class>jp.relx.copitte.servlet.ContextListener</listener-class>
+  </listener>
+
   <servlet>
     <servlet-name>CopitteApi</servlet-name>
     <servlet-class>org.apache.wink.server.internal.servlet.RestServlet</servlet-class>
