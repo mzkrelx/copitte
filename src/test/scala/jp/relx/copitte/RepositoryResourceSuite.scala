@@ -53,22 +53,20 @@ class RepositoryResourceSuite extends FunSuite
 
     expect(201) { res.getStatusCode() }
 
-    val loc = res.getHeaders().asScala.get("Location")
     expect("/repos/copitte") {
-      loc match {
-        case None => "no Location header"
+      res.getHeaders().asScala.get("Location") match {
+        case None => "Location header not found."
         case Some(x) if x.length == 1 =>
           try {
             new URI(x.head).getPath()
           } catch {
-            case e => "uri parse failed"
+            case e => "uri parse failed."
           }
-        case Some(x) => "too many location header"
+        case Some(x) => "too many location headers."
       }
     }
 
     val repoDir = new File(Const.CopitteHome, "repos/copitte")
-
     val grepInRepo = (cmd: String, reg: Regex) => {
       val lins = Process(cmd, repoDir).lines.toList
       logger.info(lins.toString())
