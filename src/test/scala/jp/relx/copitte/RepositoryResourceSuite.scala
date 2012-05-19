@@ -48,7 +48,7 @@ class RepositoryResourceSuite extends FunSuite
     expect(201) { res.getStatusCode() }
 
     val loc = res.getHeaders().asScala.get("Location")
-    expect("/repos/milm") {
+    expect("/repos/copitte") {
       loc match {
         case None => "no Location header"
         case Some(x) if x.length == 1 =>
@@ -66,7 +66,7 @@ class RepositoryResourceSuite extends FunSuite
   test("sync repositories (pull and push)") { pending }
 
   test("remove repository") { handler => pending
-    val res = handler(new URI("/repos/milm")).delete()
+    val res = handler(new URI("/repos/copitte")).delete()
     expect(200) { res.getStatusCode() }
   }
 }
