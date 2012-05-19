@@ -34,7 +34,7 @@ class RepositoryResource {
   val repoDir = Const.CopitteHome + "/repos"
   
   // .git/config に書く remote の名前
-  val PushRepoName = "pushRepo"
+  val PushRepoName = "copitte-push-repo"
 
   val logger = LoggerFactory.getLogger(getClass) 
   
