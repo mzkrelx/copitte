@@ -1,10 +1,11 @@
 package jp.relx.copitte.test
+import java.net.URL
 
 object TestJsons {
-  val registerRepo = """{
+  def registerRepo(pushUrl: String, pullUrl: String): String = ("""{
     |    "vcs": "git",
     |    "name": "copitte",
-    |    "pullurl": "file:///tmp/copitte_test/src-repo.git",
-    |    "pushurl": "file:///tmp/copitte_test/dest-repo.git"
-    |}""".stripMargin
+    |    "pullurl": """" + pullUrl + """",
+    |    "pushurl": """" + pushUrl + """"
+    |}""") stripMargin
 }
