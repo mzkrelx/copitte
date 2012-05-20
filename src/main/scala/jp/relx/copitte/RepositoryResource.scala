@@ -1,8 +1,7 @@
 package jp.relx.copitte
 
 import java.io.File
-
-import scala.reflect.BeanInfo
+import java.net.URI
 
 import org.slf4j.LoggerFactory
 
@@ -14,8 +13,8 @@ import javax.ws.rs.Path
 import javax.ws.rs.PathParam
 import jp.relx.commons.CommandExecuteUtil.execCommand
 import jp.relx.commons.CommandFailedException
-import net.liftweb.json.DefaultFormats
 import net.liftweb.json.parse
+import net.liftweb.json.DefaultFormats
 
 case class RepoInfo(vcs: String, name: String, pullurl: String, pushurl: String)
 case class Author(name: String, email: String)
@@ -102,11 +101,7 @@ class RepositoryResource {
           new File(localRepoPath)
         )
       
-      val res =
-        <html xmlns="http://www.w3.org/1999/xhtml">
-          <body>Repogitory was registerd.</body>
-        </html>
-      Response.ok(res.toString()).build()
+      Response.created(new URI("/repos/" + repoInfo.name)).build()
     } catch {
       case e: IllegalArgumentException => {
         logger.error(e.getMessage())

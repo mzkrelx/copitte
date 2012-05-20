@@ -1,7 +1,7 @@
 #
 # pullurl をクローンし、pushurl をリモートリポジトリに登録する
 #
-POST /repos
+# POST /repos
 {
   "vcs": "git",
   "name": "repo",
