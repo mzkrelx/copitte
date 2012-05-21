@@ -2,9 +2,7 @@ package jp.relx.copitte
 
 import java.io.File
 import java.net.URI
-
 import org.slf4j.LoggerFactory
-
 import javax.ws.rs.core.Response
 import javax.ws.rs.DELETE
 import javax.ws.rs.GET
@@ -15,17 +13,9 @@ import jp.relx.commons.CommandExecuteUtil.execCommand
 import jp.relx.commons.CommandFailedException
 import net.liftweb.json.parse
 import net.liftweb.json.DefaultFormats
+import net.liftweb.json.JsonAST.JString
 
 case class RepoInfo(vcs: String, name: String, pullurl: String, pushurl: String)
-case class Author(name: String, email: String)
-case class Commit(id: String, message: String, timestamp: String, url: String,
-  added: String, removed: String, modified: String, author: Author)
-case class Owner(name: String, email: String)
-case class Repository(name: String, url: String, pledgie: String,
-  description: String, homepage: String, watchers: Int, forks: Int,
-  rprivate: Int, owner: Owner)
-case class PostReceiveInfo(before: String, after: String, ref: String,
-  commits: List[Commit], repository: Repository)
 
 @Path("/repos")
 class RepositoryResource {
@@ -97,7 +87,7 @@ class RepositoryResource {
        */
       def addRemoteConfig(): (Int, String, String) = 
         execCommand(
-          "git remote add " + repoInfo.name + " " + repoInfo.pushurl, 30 * 1000L,
+          "git remote add " + PushRepoName + " " + repoInfo.pushurl, 30 * 1000L,
           new File(localRepoPath)
         )
       
@@ -117,15 +107,9 @@ class RepositoryResource {
   @POST
   @Path("{repoName}")
   def postReceive(@PathParam("repoName")repoName: String, bodyStr: String): Response = {
-    def getPostReceiveInfo = {
-      val postReceiveInfo = parse(bodyStr).extract[PostReceiveInfo]
-      require(postReceiveInfo.repository.name != "")
-      postReceiveInfo
-    }
-    
     try {
       val execGitCmd = execCommand(_: String, 30 * 1000L, 
-        new File(getLocalRepoPath(getPostReceiveInfo.repository.name)))
+        new File(getLocalRepoPath(repoName).toString()))
       
       execGitCmd("git pull origin master") match {
         case (0, o, _) => logger.debug(o)
