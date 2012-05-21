@@ -83,7 +83,7 @@ class RepositoryResourceSuite extends FunSuite
     }
 
     expect(destRepo) {
-      grepInRepo("git remote show copitte ", """^\s+Push  URL: (.+)$""".r).
+      grepInRepo("git remote show -n copitte-push-repo ", """^\s+Push  URL: (.+)$""".r).
         headOption.getOrElse("Push URL not found.")
     }
   }
