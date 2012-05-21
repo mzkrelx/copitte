@@ -38,10 +38,12 @@ class RepositoryResourceSuite extends FunSuite
     List("onecommit-src.git", "blank-dest.git") foreach { orig =>
       copyDirectoryToDirectory(new File(resourcesDir, orig), WorkDir)
     }
+    // TODO CopitteHome のバックアップをして、空にする
   }
 
   override def afterAll {
     deleteDirectory(WorkDir)
+    // TODO CopitteHome をもとにもどす
   }
 
   test("create repository") { handler =>
@@ -68,6 +70,7 @@ class RepositoryResourceSuite extends FunSuite
       }
     }
 
+    // TODO 他の場所に移したほうがよいかも
     val grepInRepo = (cmd: String, reg: Regex) => {
       val lins = Process(cmd, clonedRepo).lines.toList
       logger.info(lins.toString())
