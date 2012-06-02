@@ -15,14 +15,25 @@ import net.liftweb.json.parse
 import net.liftweb.json.DefaultFormats
 import net.liftweb.json.JsonAST.JString
 
-case class RepoInfo(vcs: String, name: String, pullurl: String, pushurl: String)
+/**
+ * Infomations parsed from json when registering.
+ * 
+ * @constructor create a new info with params.
+ * @param vcs     the version-control-system's name. now 'git' only.
+ * @param name    the repository's name
+ * @param pullurl the url option for 'git pull'
+ * @param pushurl the url option for 'git push'
+ */
+case class RegisterInfo(vcs: String, name: String, pullurl: String, pushurl: String)
 
+/** Repository resource of Wink. Controls under /repos access. */
 @Path("/repos")
 class RepositoryResource {
 
-  // .git/config に書く remote の名前
+  /** The name of git remote to push. Written into the .git/config file. */
   val PushRepoName = "copitte-push-repo"
 
+  /** Logger */
   val logger = LoggerFactory.getLogger(getClass) 
   
   /**
@@ -30,6 +41,9 @@ class RepositoryResource {
    */
   implicit val formats = DefaultFormats
   
+  /**
+   * Get the directory's path to save local repository.
+   */
   def getLocalRepoPath(repoName: String): String = Const.ReposDirPath + "/" +repoName
   
   @GET
@@ -56,9 +70,9 @@ class RepositoryResource {
   def registerRepo(bodyStr: String): Response = {
     try {
       logger.info(bodyStr)
-      val repoInfo = parse(bodyStr).extract[RepoInfo]
+      val repoInfo = parse(bodyStr).extract[RegisterInfo]
       
-      // TODO OutPath ディレクトリが空であるかチェックする
+      // TODO ディレクトリが空であるかチェックする
       val localRepoPath = getLocalRepoPath(repoInfo.name)
       
       gitClone() match {
@@ -104,6 +118,16 @@ class RepositoryResource {
     }
   }
   
+  @GET
+  @Path("/create-form")
+  def createForm(): Response = {
+    val res = 
+      <html xmlns="http://www.w3.org/1999/xhtml">
+          <body>form</body>
+        </html>
+    Response.ok(res.toString()).build()
+  }
+
   @POST
   @Path("{repoName}")
   def postReceive(@PathParam("repoName")repoName: String, bodyStr: String): Response = {
