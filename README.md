@@ -8,4 +8,4 @@ Git reposigory synchronizing tool.
 
 Usage
 
-comming soon
+comming soon ... 
